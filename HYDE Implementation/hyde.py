@@ -46,8 +46,11 @@ def create_pinecone_index(dimension=768, index_name="hyde-index", metric="cosine
         pc.create_index(
             name=index_name,
             dimension=dimension,
-            metric=metric
-            # Free tier automatically uses gcp-starter, no need to specify
+            metric=metric,
+            spec=ServerlessSpec(
+                cloud="aws",
+                region="us-east-1"
+            )
         )
         print(f"Created new index: {index_name}")
     else:
@@ -129,15 +132,17 @@ def generate_hypothetical_document(llm, query):
     Generate a hypothetical document that would answer the query using an LLM.
     This is the core of the HyDE technique.
     """
-    hyde_prompt = f"""Based on the question below, generate a passage that would contain the answer. 
-    The passage should be comprehensive, accurate, and directly relevant to the question.
-    Be detailed and specific, as this passage will be used for retrieval.
+    hyde_prompt = f"""Generate a hypothetical document that contains the answer to the question below. 
+    The document should be:
+    - Comprehensive: Include all relevant details and context needed to fully address the question.
+    - Accurate: Ensure factual correctness and avoid speculation or irrelevant information.
+    - Directly relevant: Focus on the question's intent and scope, providing specific details that align with it.
+    - Well-structured: Use clear, concise language and organize the content logically for easy retrieval.
+
+Question: {query}
+
+Hypothetical Document:"""
     
-    Question: {query}
-    
-    Hypothetical Document:"""
-    
-    # Use LangChain's chat model with a HumanMessage
     response = llm.invoke([HumanMessage(content=hyde_prompt)])
     hypothetical_document = response.content
     
@@ -147,7 +152,7 @@ def generate_hypothetical_document(llm, query):
     
     return hypothetical_document
 
-# improve the search function with HyDE
+## improve the search function with HyDE
 def hyde_search(index, query, llm, use_hyde=True, top_k=2):
     """
     Search using Hypothetical Document Embeddings (HyDE) technique.
@@ -174,3 +179,4 @@ def hyde_search(index, query, llm, use_hyde=True, top_k=2):
         # Use traditional search with original query
         print("Searching with original query embedding...")
         return search_pinecone(index, query, top_k)
+
