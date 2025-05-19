@@ -1,7 +1,7 @@
 [project]
 name = "rag-techniques"
 version = "0.1.0"
-description = "Add your description here"
+description = "Anything related to RAG Techniques I would've implemented"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
