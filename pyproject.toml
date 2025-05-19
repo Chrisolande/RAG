@@ -1,0 +1,12 @@
+[project]
+name = "rag-techniques"
+version = "0.1.0"
+description = "Everything related to the different techniques of using LLMs to answer questions"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "langchain>=0.3.25",
+    "langchain-core>=0.3.60",
+    "langchain-huggingface>=0.2.0",
+    "langgraph>=0.4.5",
+]
