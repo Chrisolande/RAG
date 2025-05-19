@@ -2,6 +2,7 @@ import os
 import google.generativeai as genai
 from pinecone import Pinecone
 from langchain_core.callbacks import StreamingStdOutCallbackHandler
+from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 
 # Initialize the LLM
@@ -60,7 +61,7 @@ def get_embedding(text, model_name="models/embedding-001"):
     """
     Get 768-dimensional embeddings using Google's text-embedding-gecko model
     
-    This model produces 768-dimensional embeddings, which match your Pinecone index
+    This model produces 768-dimensional embeddings, which match the Pinecone index
     """
     result = genai.embed_content(
         model=model_name,
@@ -116,7 +117,60 @@ def search_pinecone(index, query, top_k=2):
     
     # Format results
     search_results = []
+    
     for match in results["matches"]:
         search_results.append((match["metadata"]["text"], match["score"]))
     
     return search_results
+
+# Generate hypothetical document using LLM
+def generate_hypothetical_document(llm, query):
+    """
+    Generate a hypothetical document that would answer the query using an LLM.
+    This is the core of the HyDE technique.
+    """
+    hyde_prompt = f"""Based on the question below, generate a passage that would contain the answer. 
+    The passage should be comprehensive, accurate, and directly relevant to the question.
+    Be detailed and specific, as this passage will be used for retrieval.
+    
+    Question: {query}
+    
+    Hypothetical Document:"""
+    
+    # Use LangChain's chat model with a HumanMessage
+    response = llm.invoke([HumanMessage(content=hyde_prompt)])
+    hypothetical_document = response.content
+    
+    print("\n--- Generated Hypothetical Document ---")
+    print(hypothetical_document)
+    print("--------------------------------------\n")
+    
+    return hypothetical_document
+
+# improve the search function with HyDE
+def hyde_search(index, query, llm, use_hyde=True, top_k=2):
+    """
+    Search using Hypothetical Document Embeddings (HyDE) technique.
+    
+    Args:
+        index: Pinecone index
+        query: Original user query
+        llm: Language model for generating hypothetical document
+        use_hyde: Whether to use HyDE or traditional search
+        top_k: Number of results to return
+        
+    Returns:
+        List of (document, score) tuples
+    """
+    if use_hyde:
+        print(f"Original query: {query}")
+        # Generate hypothetical document
+        hypothetical_doc = generate_hypothetical_document(llm, query)
+        
+        # Use hypothetical document for embedding and search
+        print("Searching with hypothetical document embedding...")
+        return search_pinecone(index, hypothetical_doc, top_k)
+    else:
+        # Use traditional search with original query
+        print("Searching with original query embedding...")
+        return search_pinecone(index, query, top_k)
