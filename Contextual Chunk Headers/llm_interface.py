@@ -84,7 +84,7 @@ class RAGChain:
     def stream(
         self, 
         query: str,
-        config = Optional[RunnableConfig] = None,
+        config: Optional[RunnableConfig] = None,
         **kwargs
     ):
         """ 
