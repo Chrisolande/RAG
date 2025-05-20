@@ -10,6 +10,8 @@ dependencies = [
     "langchain>=0.3.25",
     "langchain-core>=0.3.60",
     "langchain-openai>=0.3.17",
+    "langchain-pinecone>=0.2.6",
     "numpy>=2.2.6",
-    "pinecone>=6.0.2"
+    "pinecone>=6.0.2",
+    "tqdm>=4.67.1",
 ]
