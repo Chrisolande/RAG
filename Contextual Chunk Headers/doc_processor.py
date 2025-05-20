@@ -39,4 +39,32 @@ class DocumentProcessor:
         return self.split_documents(documents)
 
 
+class ContextualHeaderProcessor(DocumentProcessor):
+    """
+    Extends DocumentProcessor to add contextual headers to document chunks.
+    """
+    def __init__(self, llm, chunk_size: int = 2000, chunk_overlap: int = 200, docs_dir: str = "books"):
+        super().__init__(chunk_size, chunk_overlap, docs_dir)
+        self.llm = llm
 
+        # Define the header prompt
+        self.header_prompt = PromptTemplate.from_template(
+            f"""
+            You are an expert at summarizing text.
+            Given the following text, create a concise contextual header (1-2 sentences) 
+            that captures the main topics and context of this text segment.
+            The header should help in retrieving this text when relevant questions are asked.
+            
+            TEXT:
+            {text}
+            
+            CONTEXTUAL HEADER:
+            """
+        )
+        # Create chain for generating headers
+        self.header_chain = (
+            {"text": RunnablePassthrough()} 
+            | self.header_prompt 
+            | self.llm 
+            | StrOutputParser()
+        )
