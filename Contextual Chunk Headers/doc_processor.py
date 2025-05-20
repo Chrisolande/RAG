@@ -68,3 +68,40 @@ class ContextualHeaderProcessor(DocumentProcessor):
             | self.llm 
             | StrOutputParser()
         )
+
+    def add_contextual_headers(self, 
+                                documents: List[Document],
+                                config: Optional[RunnableConfig] = None) -> List[Document]:
+        """
+        Add contextual headers to document chunks.
+        
+        Args:
+            documents: List of document chunks
+            config: Optional configuration for the runnable
+            
+        Returns:
+            List of documents with contextual headers
+        """
+
+        enhanced_docs = []
+
+        print(f"Generating contextual headers for {len(documents)} document chunks...")
+        for doc in tqdm(documents, desc = "Generating headers"):
+            header = self.header_chain.invoke(doc.page_content, config = config)
+
+            # Create new document with header prepended to content
+            enhanced_content = f"CONTEXT: {header}\n\n{doc.page_content}"
+
+            # Create new document with enhanced content and original metadata
+            enhanced_doc = Document(
+                page_content=enhanced_content,
+                metadata={
+                    **doc.metadata,
+                    "header": header
+                }
+            )
+
+            enhanced_docs.append(enhanced_doc)
+
+        return enhanced_docs
+        
