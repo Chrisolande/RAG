@@ -104,4 +104,15 @@ class ContextualHeaderProcessor(DocumentProcessor):
             enhanced_docs.append(enhanced_doc)
 
         return enhanced_docs
+
+    def process_documents_with_headers(
+                                    self,
+                                    config: Optional[RunnableConfig] = None
+                                ) -> List[Document]:
         
+        """
+        Load, split, and process documents with contextual headers.
+        """
+        documents = self.load_documents()
+        split_docs = self.split_documents(documents)
+        return self.add_contextual_headers(split_docs, config=config)
