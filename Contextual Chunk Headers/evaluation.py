@@ -107,7 +107,58 @@ class RAGEvaluator:
         return end_time - start_time
         
     def run_evaluation(self, queries: List[str], standard_rag, contextual_rag, relevant_docs: Optional[Dict[str, List[Document]]] = None, reference_answers: Optional[Dict[str, str]] = None, llm_evaluator = None):
-        pass
+        print(f"Running evaluation on {len(queries)} queries ...")
+        for query in tqdm(queries, desc = "Evaluating queries"):
+            # Evaluate the standard RAG
+            standard_time = self.measure_query_time(standard_rag.invoke, query)
+            standard_response = standard_rag.invoke(query)
+            standard_docs = standard_rag.retriever.get_relevant_documents(query)
+
+            # Evaluate the contextual RAG
+            contextual_time = self.measure_query_time(contextual_rag.invoke, query)
+            contextual_response = contextual_rag.invoke(query)
+            contextual_docs = contextual_rag.retriever.get_relevant_documents(query)
+
+            # Store results for this query
+            self.results["standard"][query] = {
+                "response": standard_response,
+                "retrieved_docs": standard_docs,
+                "query_time": standard_time,
+                "semantic_relevance": self.evaluate_semantic_relevance(query, standard_docs)
+            }
+            
+            self.results["contextual"][query] = {
+                "response": contextual_response,
+                "retrieved_docs": contextual_docs,
+                "query_time": contextual_time,
+                "semantic_relevance": self.evaluate_semantic_relevance(query, contextual_docs)
+            }
+            
+            # Add retrieval accuracy if relevant docs are provided
+            if relevant_docs and query in relevant_docs:
+                self.results["standard"][query]["retrieval_accuracy"] = self.evaluate_retrieval_accuracy(
+                    query, standard_docs, relevant_docs[query]
+                )
+                self.results["contextual"][query]["retrieval_accuracy"] = self.evaluate_retrieval_accuracy(
+                    query, contextual_docs, relevant_docs[query]
+                )
+            
+            # Add response quality if reference answers or LLM evaluator are provided
+            if reference_answers and query in reference_answers:
+                self.results["standard"][query]["response_quality"] = self.evaluate_response_quality(
+                    query, standard_response, reference_answers[query]
+                )
+                self.results["contextual"][query]["response_quality"] = self.evaluate_response_quality(
+                    query, contextual_response, reference_answers[query]
+                )
+            elif llm_evaluator:
+                self.results["standard"][query]["response_quality"] = self.evaluate_response_quality(
+                    query, standard_response, llm_evaluator=llm_evaluator
+                )
+                self.results["contextual"][query]["response_quality"] = self.evaluate_response_quality(
+                    query, contextual_response, llm_evaluator=llm_evaluator
+                )
+                
 
     def get_summary_metrics(self) -> Dict[str, Dict[str, float]]:
         pass
