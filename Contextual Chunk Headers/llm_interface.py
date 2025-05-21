@@ -39,7 +39,7 @@ class RAGChain:
         self, 
         llm,
         retriever,
-        prompt
+        prompt_template: Optional[str] = None
     ):
         
         self.llm = llm
