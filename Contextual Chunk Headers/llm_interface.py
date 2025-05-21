@@ -115,7 +115,7 @@ class StandardRAGChain(RAGChain):
             | StrOutputParser()
         )
 
-class ContextualHeaderRagChain(RAGChain):
+class ContextualHeaderRAGChain(RAGChain):
     def __init__(
         self,
         llm,
