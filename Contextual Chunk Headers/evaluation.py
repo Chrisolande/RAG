@@ -8,7 +8,7 @@ from langchain_core.embeddings import Embeddings
 from tqdm.auto import tqdm
 
 class RAGEvaluator:
-    def __init__(self, embeddings: Embeddinds):
+    def __init__(self, embeddings: Embeddings):
         self.embeddings = embeddings
 
         self.results = {
@@ -57,10 +57,10 @@ class RAGEvaluator:
 
         # Calculate cosine similarities
         similarities = []
+        query_norm = np.linalg.norm(query_embedding)
         for doc_embedding in doc_embeddings:
             # Compute cosine similarity
             dot_product = np.dot(query_embedding, doc_embedding)
-        query_norm = np.linalg.norm(query_embedding)
             doc_norm = np.linalg.norm(doc_embedding)
 
             if query_norm == 0 or doc_norm == 0:
