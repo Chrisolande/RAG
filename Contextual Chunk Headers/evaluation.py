@@ -17,10 +17,48 @@ class RAGEvaluator:
         }
 
     def evaluate_retrieval_accuracy(self, query: str, retrieved_docs: List[Document], relevant_docs: List[Document]) -> float:
-        pass
+        # Get the document IDs for comparison
+        retrieved_ids = [doc.metadata.get("id", doc.metadata.get("source", "")) for doc in retrieved_docs]
+        relevant_ids = [doc.metadata.get("id", doc.metadata.get("source", "")) for doc in relevant_docs]
+
+        # Calculate precision (proportion of retrieved documents that are relevant)
+        if not retrieved_ids:
+            return 0.0
+
+        relevant_retrieved = [doc_id for doc_id in retrieved_ids if doc_id in relevant_ids]
+        precision = len(relevant_retrieved) / len(retrieved_ids)
+
+        return precision
 
     def evaluate_semantic_relevance(self, query: str, retrieved_docs: List[Document]) -> float:
-        pass
+        # Calculate the average cosine similarity
+        if not retrieved_docs:
+            return 0.0
+
+        # Get query embedding
+        query_embedding = self.embeddings.embed_query(query)
+
+        # Get document embeddings
+        doc_contents = [doc.page_content for doc in retrieved_docs]
+        doc_embeddings = self.embeddings.embed_documents(doc_contents)
+
+        # Calculate cosine similarities
+        similarities = []
+        for doc_embedding in doc_embeddings:
+            # Compute cosine similarity
+            dot_product = np.dot(query_embedding, doc_embedding)
+            query_norm = np.linalg.norm(query_embedding)
+            doc_norm = np.linalg.norm(doc_embedding)
+
+            if query_norm == 0 or doc_norm == 0:
+                similarity = 0
+            else:
+                similarity = dot_product / (query_norm * doc_norm)
+
+            similarities.append(similarity)
+
+        # Return average similarity
+        return np.mean(similarities)
 
     def evaluate_response_quality(self, query: str, response: str, reference_answer: Optional[str] = None, llm_evaluator = None) -> float:
         pass
