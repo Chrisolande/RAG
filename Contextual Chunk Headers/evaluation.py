@@ -30,7 +30,20 @@ class RAGEvaluator:
 
         return precision
 
-    def evaluate_semantic_relevance(self, query: str, retrieved_docs: List[Document]) -> float:
+    def evaluate_semantic_relevance(
+        self,
+        query: str,
+        retrieved_docs: List[Document]
+    ) -> float:
+        """
+        Evaluate semantic relevance of retrieved documents to the query.
+        
+        Args:
+            query: Query string
+            retrieved_docs: List of Document objects retrieved by the system
+        Returns:
+            float: Average cosine similarity score (0-1)
+        """
         # Calculate the average cosine similarity
         if not retrieved_docs:
             return 0.0
@@ -47,7 +60,7 @@ class RAGEvaluator:
         for doc_embedding in doc_embeddings:
             # Compute cosine similarity
             dot_product = np.dot(query_embedding, doc_embedding)
-            query_norm = np.linalg.norm(query_embedding)
+        query_norm = np.linalg.norm(query_embedding)
             doc_norm = np.linalg.norm(doc_embedding)
 
             if query_norm == 0 or doc_norm == 0:
@@ -61,7 +74,31 @@ class RAGEvaluator:
         return np.mean(similarities)
 
     def evaluate_response_quality(self, query: str, response: str, reference_answer: Optional[str] = None, llm_evaluator = None) -> float:
-        pass
+        if reference_answer and self.embeddings:
+            # Compare response to query using semantic similarity
+            response_embedding = self.embeddings.embed_query(response)
+            reference_embedding = self.embeddings.embed_query(reference_answer)
+
+            # Compute cosine similarity
+            dot_product = np.dot(response_embedding, reference_embedding)
+            response_norm = np.linalg.norm(response_embedding)
+            reference_norm = np.linalg.norm(reference_embedding)
+            
+            if response_norm == 0 or reference_norm == 0:
+                return 0
+                
+            similarity = dot_product / (response_norm * reference_norm)
+            return similarity
+
+        elif llm_evaluator:
+            # Use LLM to evaluate response quality
+            evaluation = llm_evaluator.evaluate_response(query, response)
+            return evaluation
+
+        else:
+            # If no reference answer or LLM evaluator, return None
+            return None
+
 
     def measure_query_time(self, query_func: Callable[[str], Any], query: str) -> float:
         pass
