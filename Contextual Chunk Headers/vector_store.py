@@ -82,12 +82,12 @@ class VectorstoreManager:
         try: 
             index = self.pc.Index(self.index_name)
             index.delete(delete_all = True, namespace=namespace)
-            print(f"Cleared namespace: {namespace of "default"}")
+            print(f"Cleared namespace: {namespace or 'default'}")
 
         except Exception as e:
             # Handle the case when the namespace doesn't existyet
             if "Namespace not found" in str(e):
-                print(f"Namespace {namespace or "default"} doesn't exist yet. Nothing to clear.")
+                print(f"Namespace {namespace or 'default'} doesn't exist yet. Nothing to clear.")
 
             else:
                 # Re-raise other exceptions
