@@ -158,11 +158,111 @@ class RAGEvaluator:
                 self.results["contextual"][query]["response_quality"] = self.evaluate_response_quality(
                     query, contextual_response, llm_evaluator=llm_evaluator
                 )
-                
+
 
     def get_summary_metrics(self) -> Dict[str, Dict[str, float]]:
-        pass
-
+        """
+        Get summary metrics for both RAG systems.
+        
+        Returns:
+            Dictionary of summary metrics
+        """
+        summary = {
+            "standard": {},
+            "contextual": {}
+        }
+        
+        for system in ["standard", "contextual"]:
+            # Calculate average query time
+            query_times = [result["query_time"] for result in self.results[system].values()]
+            summary[system]["avg_query_time"] = np.mean(query_times)
+            
+            # Calculate average semantic relevance
+            semantic_relevances = [result["semantic_relevance"] for result in self.results[system].values()]
+            summary[system]["avg_semantic_relevance"] = np.mean(semantic_relevances)
+            
+            # Calculate average retrieval accuracy if available
+            retrieval_accuracies = [
+                result.get("retrieval_accuracy") 
+                for result in self.results[system].values() 
+                if "retrieval_accuracy" in result
+            ]
+            if retrieval_accuracies:
+                summary[system]["avg_retrieval_accuracy"] = np.mean(retrieval_accuracies)
+            
+            # Calculate average response quality if available
+            response_qualities = [
+                result.get("response_quality") 
+                for result in self.results[system].values() 
+                if "response_quality" in result
+            ]
+            if response_qualities:
+                summary[system]["avg_response_quality"] = np.mean(response_qualities)
+        
+        return summary
+    
     def visualize_results(self, output_path: Optional[str] = None):
-        pass
+        """
+        Visualize the evaluation results.
+        
+        Args:
+            output_path: Optional path to save the visualization
+        """
+        summary = self.get_summary_metrics()
+        
+        # Create figure with subplots
+        fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+        fig.suptitle('RAG System Comparison: Standard vs. Contextual Header', fontsize=16)
+        
+        # Plot query time
+        axs[0, 0].bar(
+            ['Standard RAG', 'Contextual Header RAG'],
+            [summary['standard']['avg_query_time'], summary['contextual']['avg_query_time']]
+        )
+        axs[0, 0].set_title('Average Query Processing Time (s)')
+        axs[0, 0].set_ylabel('Time (seconds)')
+        
+        # Plot semantic relevance
+        axs[0, 1].bar(
+            ['Standard RAG', 'Contextual Header RAG'],
+            [summary['standard']['avg_semantic_relevance'], summary['contextual']['avg_semantic_relevance']]
+        )
+        axs[0, 1].set_title('Average Semantic Relevance')
+        axs[0, 1].set_ylabel('Cosine Similarity')
+        
+        # Plot retrieval accuracy if available
+        if 'avg_retrieval_accuracy' in summary['standard'] and 'avg_retrieval_accuracy' in summary['contextual']:
+            axs[1, 0].bar(
+                ['Standard RAG', 'Contextual Header RAG'],
+                [summary['standard']['avg_retrieval_accuracy'], summary['contextual']['avg_retrieval_accuracy']]
+            )
+            axs[1, 0].set_title('Average Retrieval Accuracy')
+            axs[1, 0].set_ylabel('Precision')
+        else:
+            axs[1, 0].text(0.5, 0.5, 'Retrieval Accuracy Not Available', 
+                         horizontalalignment='center', verticalalignment='center')
+            axs[1, 0].set_title('Average Retrieval Accuracy')
+        
+        # Plot response quality if available
+        if 'avg_response_quality' in summary['standard'] and 'avg_response_quality' in summary['contextual']:
+            axs[1, 1].bar(
+                ['Standard RAG', 'Contextual Header RAG'],
+                [summary['standard']['avg_response_quality'], summary['contextual']['avg_response_quality']]
+            )
+            axs[1, 1].set_title('Average Response Quality')
+            axs[1, 1].set_ylabel('Quality Score')
+        else:
+            axs[1, 1].text(0.5, 0.5, 'Response Quality Not Available', 
+                         horizontalalignment='center', verticalalignment='center')
+            axs[1, 1].set_title('Average Response Quality')
+        
+        # Adjust layout
+        plt.tight_layout(rect=[0, 0, 1, 0.95])
+        
+        # Save or show the figure
+        if output_path:
+            plt.savefig(output_path)
+        else:
+            plt.show()
+
         
