@@ -101,7 +101,10 @@ class RAGEvaluator:
 
 
     def measure_query_time(self, query_func: Callable[[str], Any], query: str) -> float:
-        pass
+        start_time = time.time()
+        query_func(query)
+        end_time = time.time()
+        return end_time - start_time
         
     def run_evaluation(self, queries: List[str], standard_rag, contextual_rag, relevant_docs: Optional[Dict[str, List[Document]]] = None, reference_answers: Optional[Dict[str, str]] = None, llm_evaluator = None):
         pass
