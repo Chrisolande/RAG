@@ -344,4 +344,5 @@ if __name__ == "__main__":
     print(f"Index Name: {stats.get('index_name')}")
     print(f"Dimension: {stats.get('dimension')}")
     print(f"Total Vector Count: {stats.get('total_vector_count')}")
+    
 
