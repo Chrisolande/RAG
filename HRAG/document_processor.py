@@ -163,7 +163,7 @@ class HierarchicalDocumentProcessor:
     def generate_summaries_for_root_chunks(self, root_chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Generate summaries for root chunks to improve retrieval.
-        
+        This will ensure less relevant info are not passed to the LLM
         """
         if not root_chunks:
             return []
