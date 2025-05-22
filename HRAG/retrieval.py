@@ -65,3 +65,62 @@ class HierarchicalRetriever:
             "leaf_chunks": leaf_chunks,
             "context": context
         }
+
+    def format_retrieved_chunks(
+        self, 
+        root_chunks: List[Dict[str, Any]], 
+        leaf_chunks: List[Dict[str, Any]]
+    ) -> str:
+
+        """Format the retrieved chunks into a string"""
+        if not root_chunks and not leaf_chunks:
+            return ""
+
+        # Format root chunks by score
+        sorted_root_chunks = sorted(root_chunks, key=lambda x: x.get("score", 0), reverse = True)
+        # Group leaf chunks by parent ID
+        leaf_chunks_by_parent = {}
+        for chunk in leaf_chunks:
+            parent_id = chunk.get("metadata", {}).get("parent_id", "unknown")
+            if parent_id not in leaf_chunks_by_parent:
+                leaf_chunks_by_parent[parent_id] = []
+            leaf_chunks_by_parent[parent_id].append(chunk)
+
+        # Format each root chunk with its leaf chunks
+        formatted_sections = []
+        
+        for i, root_chunk in enumerate(sorted_root_chunks):
+            root_id = root_chunk.get("id", "")
+            
+            # Format the root chunk
+            source = root_chunk.get("metadata", {}).get("source", "unknown")
+            
+            section_header = f"[Section {i+1}] (Source: {source})"
+            section_content = []
+            
+            # Add summary if available
+            if root_chunk.get("summary"):
+                section_content.append(f"Summary: {root_chunk['summary']}")
+            
+            # Add relevant leaf chunks for this root
+            relevant_leaf_chunks = leaf_chunks_by_parent.get(root_id, [])
+            
+            # Sort leaf chunks by score
+            sorted_leaf_chunks = sorted(relevant_leaf_chunks, key=lambda x: x.get("score", 0), reverse=True)
+            
+            # Add top leaf chunks
+            for j, leaf_chunk in enumerate(sorted_leaf_chunks):
+                leaf_text = leaf_chunk.get("text", "")
+                section_content.append(f"Passage {j+1}: {leaf_text}")
+            
+            # If no leaf chunks, use the root text
+            if not section_content:
+                section_content.append(root_chunk.get("text", ""))
+            
+            # Format the section
+            formatted_section = f"{section_header}\n\n{chr(10).join(section_content)}"
+            formatted_sections.append(formatted_section)
+        
+        # Join all formatted sections
+        context = "\n\n" + "\n\n".join(formatted_sections)
+        return context
