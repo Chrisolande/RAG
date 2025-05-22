@@ -97,3 +97,66 @@ class HierarchicalDocumentProcessor:
         
         logger.info(f"Loaded {len(all_documents)} total documents")
         return all_documents
+
+    def create_hierarchical_chunks(self, documents: List[Dict[str, Any]]):
+        """ Split documents into hierarchical chunks with root and leaf nodes. """
+        if not documents:
+            logger.warning("No documents to chunk")
+            return [], []
+
+        logger.info(f"Creating hierarchical chunks for {len(documents)} documents")
+        root_chunks = []
+        leaf_chunks = []
+
+        for doc_idx, doc in enumerate(documents):
+            text = doc["text"]
+            metadata = doc["metadata"]
+            
+            # Create root/parent chunks (larger sections)
+            root_texts = self.root_splitter.split_text(text)
+            
+            for root_idx, root_text in enumerate(root_texts):
+                # Create a unique ID for the root chunk
+                root_id = f"root_{doc_idx}_{root_idx}"
+                
+                # Create the root chunk
+                root_chunk = {
+                    "id": root_id,
+                    "text": root_text,
+                    "metadata": {
+                        **metadata,
+                        "chunk_type": "root",
+                        "chunk_id": root_idx,
+                        "doc_id": doc_idx,
+                    }
+                }
+                
+                # Add to root chunks
+                root_chunks.append(root_chunk)
+                
+                # Create leaf chunks from this root chunk
+                leaf_texts = self.leaf_splitter.split_text(root_text)
+                
+                for leaf_idx, leaf_text in enumerate(leaf_texts):
+                    # Create a unique ID for the leaf chunk that references its parent
+                    leaf_id = f"leaf_{doc_idx}_{root_idx}_{leaf_idx}"
+                    
+                    # Create the leaf chunk with reference to its parent
+                    leaf_chunk = {
+                        "id": leaf_id,
+                        "text": leaf_text,
+                        "metadata": {
+                            **metadata,
+                            "chunk_type": "leaf",
+                            "chunk_id": leaf_idx,
+                            "parent_id": root_id,
+                            "doc_id": doc_idx,
+                        }
+                    }
+                    
+                    # Add to leaf chunks
+                    leaf_chunks.append(leaf_chunk)
+        
+        logger.info(f"Created {len(root_chunks)} root chunks and {len(leaf_chunks)} leaf chunks")
+        return root_chunks, leaf_chunks
+    
