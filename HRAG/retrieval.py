@@ -124,3 +124,33 @@ class HierarchicalRetriever:
         # Join all formatted sections
         context = "\n\n" + "\n\n".join(formatted_sections)
         return context
+
+class HierarchicalRetrievalPipeline:
+    def __init__(self, top_k_root: int = TOP_K_ROOT, top_k_leaf: int = TOP_K_LEAF):
+        """Initialize the hierarchical retrieval pipeline."""
+        self.retriever = HierarchicalRetriever(top_k_root=top_k_root, top_k_leaf=top_k_leaf)
+        logger.info(f"Initialized HierarchicalRetrievalPipeline with top_k_root={top_k_root}, top_k_leaf={top_k_leaf}")
+
+    def run(
+        self, 
+        query: str, 
+        root_filter: Optional[Dict[str, Any]] = None,
+        leaf_filter: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Run the hierarchical retrieval pipeline.
+
+        """
+        return self.retriever.retrieve(query, root_filter, leaf_filter)
+
+
+if __name__ == "__main__":
+    pipeline = HierarchicalRetrievalPipeline(top_k_root=2, top_k_leaf=3)
+    
+    test_query = "Who wrote the declaration of independence?"
+    result = pipeline.run(test_query)
+    
+    print(f"Query: {result['query']}")
+    print(f"Retrieved {len(result['root_chunks'])} root chunks and {len(result['leaf_chunks'])} leaf chunks")
+    print("\nFormatted Context:")
+    print(result['context'])
