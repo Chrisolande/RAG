@@ -34,7 +34,7 @@ OPENROUTER_API_BASE = "https://openrouter.ai/api/v1"
 OPENROUTER_REFERRER = "http://localhost:3000"
 
 # Knowledge Base Configuration
-KB_PATH = "HRAG/books"
+KB_PATH = "/home/olande/Desktop/Rag_Techniques/HRAG/books"
 
 # Document Processing Configuration
 CHUNK_SIZE = 1000
