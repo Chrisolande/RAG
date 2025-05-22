@@ -159,4 +159,116 @@ class HierarchicalDocumentProcessor:
         
         logger.info(f"Created {len(root_chunks)} root chunks and {len(leaf_chunks)} leaf chunks")
         return root_chunks, leaf_chunks
+
+    def generate_summaries_for_root_chunks(self, root_chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Generate summaries for root chunks to improve retrieval.
+        
+        """
+        if not root_chunks:
+            return []
+        
+        logger.info(f"Generating summaries for {len(root_chunks)} root chunks")
+        
+        # Load the summarization chain
+        summarize_chain = load_summarize_chain(
+            llm=self.llm,
+            chain_type="stuff",
+            verbose=False
+        )
+        
+        root_chunks_with_summaries = []
+        
+        for i, chunk in enumerate(root_chunks):
+            try:
+                # Convert to LangChain document format
+                doc = Document(
+                    page_content=chunk["text"],
+                    metadata=chunk["metadata"]
+                )
+                
+                # Generate summary
+                summary = summarize_chain.run([doc])
+                
+                # Add summary to the chunk
+                chunk_with_summary = {
+                    **chunk,
+                    "summary": summary
+                }
+                
+                root_chunks_with_summaries.append(chunk_with_summary)
+                
+                # Log progress
+                if (i + 1) % 5 == 0 or i == len(root_chunks) - 1:
+                    logger.info(f"Generated summaries for {i + 1}/{len(root_chunks)} root chunks")
+                
+            except Exception as e:
+                logger.error(f"Error generating summary for chunk {i}: {str(e)}")
+                # Add the original chunk without summary
+                root_chunks_with_summaries.append(chunk)
+        
+        return root_chunks_with_summaries
+    
+    def process_documents(self):
+        """
+        Load and process documents from the knowledge base with hierarchical chunking.
+      
+        """
+        # Load documents
+        documents = self.load_documents()
+        
+        # Create hierarchical chunks
+        root_chunks, leaf_chunks = self.create_hierarchical_chunks(documents)
+        
+        # Generate summaries for root chunks
+        root_chunks_with_summaries = self.generate_summaries_for_root_chunks(root_chunks)
+        
+        return root_chunks_with_summaries, leaf_chunks
+
+
+def get_document_stats(kb_path: str = KB_PATH) -> Dict[str, Any]:
+    """
+    Get statistics about the documents in the knowledge base.
+
+    """
+    if not os.path.exists(kb_path):
+        logger.error(f"Knowledge base path does not exist: {kb_path}")
+        return {"error": "Knowledge base path does not exist"}
+    
+    stats = {
+        "total_files": 0,
+        "file_types": {},
+        "total_size_bytes": 0,
+    }
+    
+    for root, _, files in os.walk(kb_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_ext = os.path.splitext(file)[1].lower()
+            
+            # Update statistics
+            stats["total_files"] += 1
+            stats["file_types"][file_ext] = stats["file_types"].get(file_ext, 0) + 1
+            stats["total_size_bytes"] += os.path.getsize(file_path)
+    
+    # Convert bytes to MB for readability
+    stats["total_size_mb"] = round(stats["total_size_bytes"] / (1024 * 1024), 2)
+    
+    return stats
+
+
+if __name__ == "__main__":
+    # Test if everythin is okay!?
+    processor = HierarchicalDocumentProcessor()
+    root_chunks, leaf_chunks = processor.process_documents()
+    
+    print(f"Processed {len(root_chunks)} root chunks and {len(leaf_chunks)} leaf chunks")
+    
+    # Print document statistics
+    stats = get_document_stats()
+    print(f"Knowledge Base Statistics:")
+    print(f"Total Files: {stats['total_files']}")
+    print(f"Total Size: {stats['total_size_mb']} MB")
+    print(f"File Types: {stats['file_types']}")
+
     
