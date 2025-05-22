@@ -44,7 +44,6 @@ class HierarchicalDocumentProcessor:
             model_name="meta-llama/llama-3.1-8b-instruct",
             openai_api_key=OPENROUTER_API_KEY,
             openai_api_base="https://openrouter.ai/api/v1",
-            max_tokens=1024,
             temperature=0.3
         )
 
