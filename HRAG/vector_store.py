@@ -139,7 +139,62 @@ class HierarchicalVectorStore:
         logger.info(f"Successfully upserted {successful_upserts}/{len(vectors)} root vectors")
         return successful_upserts
 
-
-
     def upsert_leaf_chunks():
-        pass
+        if not leaf_chunks_with_embeddings:
+            logger.warning("No leaf chunks to upsert")
+            return 0
+        
+        logger.info(f"Upserting {len(leaf_chunks_with_embeddings)} leaf chunks to Pinecone")
+        
+        # Prepare vectors for upserting
+        vectors = []
+        batch_size = 100  # Pinecone recommends batches of 100 vectors
+        
+        for chunk in leaf_chunks_with_embeddings:
+            # Use the chunk ID as the vector ID
+            vector_id = chunk.get("id", f"leaf_{int(time.time())}")
+            
+            # Extract the embedding
+            embedding = chunk.get("embedding", [])
+            
+            # Extract metadata (excluding the embedding)
+            # Start with base metadata
+            metadata = {"text": chunk["text"]}
+            
+            # Add metadata fields, filtering out null values
+            if "metadata" in chunk and isinstance(chunk["metadata"], dict):
+                for key, value in chunk["metadata"].items():
+                    # Skip null values as Pinecone doesn't accept them
+                    if value is not None:
+                        metadata[key] = value
+            
+            # Add to vectors list
+            vectors.append((vector_id, embedding, metadata))
+        
+        # Upsert vectors in batches
+        successful_upserts = 0
+        
+        for i in range(0, len(vectors), batch_size):
+            batch = vectors[i:i + batch_size]
+            
+            try:
+                # Format batch for Pinecone
+                pinecone_batch = [
+                    (id, embedding, metadata) 
+                    for id, embedding, metadata in batch
+                ]
+                
+                # Upsert to Pinecone
+                self.index.upsert(
+                    vectors=pinecone_batch,
+                    namespace=self.leaf_namespace
+                )
+                
+                successful_upserts += len(batch)
+                logger.info(f"Upserted leaf batch {i // batch_size + 1}/{(len(vectors) - 1) // batch_size + 1}")
+            
+            except Exception as e:
+                logger.error(f"Error upserting leaf batch {i // batch_size + 1}: {str(e)}")
+        
+        logger.info(f"Successfully upserted {successful_upserts}/{len(vectors)} leaf vectors")
+        return successful_upserts
