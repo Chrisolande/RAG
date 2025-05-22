@@ -51,3 +51,49 @@ class HierarchicalDocumentProcessor:
         logger.info(f"Initialized HierarchicalDocumentProcessor with knowledge base path: {kb_path}")
         logger.info(f"Leaf chunk size: {CHUNK_SIZE}, Root chunk size: {SUMMARY_CHUNK_SIZE}")
 
+    def load_documents(self) -> List[Dict[str, Any]]:
+        """ Load all the documents from the knowledge base directory """
+        if not os.path.exists(self.kb_path):
+            logger.error(f"Knowledge base path does not exist: {self.kb_path}")
+            return []
+        
+        logger.info(f"Loading documents from: {self.kb_path}")
+        
+        # Create loaders for different file types
+        loaders = {
+            ".txt": DirectoryLoader(
+                self.kb_path, 
+                glob="**/*.txt", 
+                loader_cls=TextLoader,
+                show_progress=True
+            ),
+            ".pdf": DirectoryLoader(
+                self.kb_path, 
+                glob="**/*.pdf", 
+                loader_cls=PyPDFLoader,
+                show_progress=True
+            ),
+        }
+
+        all_documents = []
+        for ext, loader in loaders.items():
+            try:
+                logger.info(f"Loading {ext} documents ...")
+                docs = loader.load()
+                logger.info(f"Loaded {len(docs)} {ext} documents")
+
+                # Convert LangChain documents to our standard format
+                for doc in docs:
+                    all_documents.append({
+                        "text": doc.page_content,
+                        "metadata": {
+                            "source": doc.metadata.get("source", "unknown"),
+                            "page": doc.metadata.get("page", None),
+                            "file_type": ext,
+                        }
+                    })
+            except Exception as e:
+                logger.error(f"Error loading {ext} documents: {str(e)}")
+        
+        logger.info(f"Loaded {len(all_documents)} total documents")
+        return all_documents
