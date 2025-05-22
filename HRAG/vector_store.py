@@ -284,3 +284,64 @@ class HierarchicalVectorStore:
             logger.error(f"Error querying leaf: {str(e)}")
             return []
 
+    def get_index_stats(self) -> Dict[str, Any]:
+        """
+        Get statistics about the Pinecone index.
+
+        """
+        try:
+            # Describe the index
+            index_stats = self.pc.describe_index(self.index_name)
+            
+            # Get namespace statistics
+            stats = self.index.describe_index_stats()
+            
+            # Format the statistics
+            formatted_stats = {
+                "index_name": self.index_name,
+                "dimension": index_stats.dimension,
+                "metric": index_stats.metric,
+                "total_vector_count": stats.total_vector_count,
+                "namespaces": stats.namespaces
+            }
+            
+            return formatted_stats
+        
+        except Exception as e:
+            logger.error(f"Error getting index stats: {str(e)}")
+            return {"error": str(e)}
+    
+    def delete_all(self, namespace: Optional[str] = None) -> bool:
+        """
+        Delete all vectors from the specified namespace or all namespaces.
+
+        """
+        try:
+            if namespace:
+                logger.warning(f"Deleting all vectors from namespace: {namespace}")
+                self.index.delete(delete_all=True, namespace=namespace)
+                logger.info(f"Successfully deleted all vectors from namespace: {namespace}")
+            else:
+                # Delete from both namespaces
+                logger.warning(f"Deleting all vectors from all namespaces")
+                self.index.delete(delete_all=True, namespace=self.root_namespace)
+                self.index.delete(delete_all=True, namespace=self.leaf_namespace)
+                logger.info("Successfully deleted all vectors from all namespaces")
+            
+            return True
+        
+        except Exception as e:
+            logger.error(f"Error deleting vectors: {str(e)}")
+            return False
+
+
+if __name__ == "__main__":
+    vector_store = HierarchicalVectorStore()
+    
+    # Print index statistics
+    stats = vector_store.get_index_stats()
+    print(f"Index Statistics:")
+    print(f"Index Name: {stats.get('index_name')}")
+    print(f"Dimension: {stats.get('dimension')}")
+    print(f"Total Vector Count: {stats.get('total_vector_count')}")
+
