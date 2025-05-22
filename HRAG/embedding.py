@@ -60,3 +60,62 @@ class EmbeddingGenerator:
                 )
             
             return embedding_values
+        
+        except Exception as e:
+            logger.error(f"Error generating embedding: {str(e)}")
+            # Return a zero vector on error
+            return [0.0] * self.embedding_dimensions
+
+    def generate_embeddings_for_chunks(self, chunks, chunk_type):
+        """ Generate embeddings for a list of chunks"""
+        if not chunks:
+            logger.warning(f"No {chunk_type} chunks to generate embeddings for")
+            return []
+
+        logger.info(f"Generating embeddings for {len(chunks)} {chunk_type} chunks")
+        chunks_with_embeddings = []
+
+        for i, chunk in enumerate(chunks):
+            try: 
+                # For root chunnks, we use the summary if provided
+                if chunk_type == "root" and "summary" in chunk:
+                    summary_embedding = self.generate_embedding(chunk["summary"])
+
+                    # Generate embedding for the full text
+                    text_embedding = self.generate_embedding(chunk["text"])
+
+                    # Add both embeddings to the chunk
+                    chunk_with_embedding  = {
+                        **chunk,
+                        "summary_embedding": summary_embedding,
+                        "text_embedding": text_embedding
+                    }
+                else:
+                    # For leaf chunks or root chunks without summaries
+                    text = chunk["text"]
+                    embedding = self.generate_embedding(text)
+                    
+                    # Add the embedding to the chunk
+                    chunk_with_embedding = {
+                        **chunk,
+                        "embedding": embedding
+                    }
+                
+                chunks_with_embeddings.append(chunk_with_embedding)
+                
+                # Log progress periodically
+                if (i + 1) % 10 == 0 or i == len(chunks) - 1:
+                    logger.info(f"Generated embeddings for {i + 1}/{len(chunks)} {chunk_type} chunks")
+            
+            except Exception as e:
+                logger.error(f"Error generating embeddings for {chunk_type} {i}: {str(e)}")
+        logger.info(f"Generated embeddings for {len(chunks_with_embeddings)}/{len(chunks)} {chunk_type} chunks")
+        return chunks_with_embeddings
+
+    def generate_query_embedding(self, query):
+        """Generate Embedding for the query"""
+        return self.generate_embedding(query, is_query = True)  
+
+    def get_langchain_embeddings(self):
+        """Get the langchain compatible embeddings"""
+        return self.langchain_embeddings
