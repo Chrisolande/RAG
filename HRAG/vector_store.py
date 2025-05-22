@@ -47,7 +47,7 @@ class HierarchicalVectorStore:
                     spec=ServerlessSpec(
                         cloud="aws",
                         region="us-east-1"
-
+                    )
                 )
             
                 # Wait for the index to be ready
@@ -70,12 +70,12 @@ class HierarchicalVectorStore:
             logger.error(f"Error ensuring index exists: {str(e)}")
             raise
 
-    def upsert_root_chunks(self, root_chunks_with_embeddings):
+    def upsert_root_chunks(self, root_chunks_with_embeddings: List[Dict[str, Any]]) -> int:
         """Upsert root/parent document chunks with embeddings to Pinecone."""
 
         if not root_chunks_with_embeddings:
             logger.warning("No root chunks to upsert.")
-            return
+            return 0
 
         logger.info(f"Upserting {len(root_chunks_with_embeddings)} root chunks to Pinecone")
         
@@ -139,7 +139,7 @@ class HierarchicalVectorStore:
         logger.info(f"Successfully upserted {successful_upserts}/{len(vectors)} root vectors")
         return successful_upserts
 
-    def upsert_leaf_chunks():
+    def upsert_leaf_chunks(self, leaf_chunks_with_embeddings: List[Dict[str, Any]]) -> int:
         if not leaf_chunks_with_embeddings:
             logger.warning("No leaf chunks to upsert")
             return 0
@@ -198,3 +198,40 @@ class HierarchicalVectorStore:
         
         logger.info(f"Successfully upserted {successful_upserts}/{len(vectors)} leaf vectors")
         return successful_upserts
+
+    def query_root(self, query_embedding, top_k: int = 3, filter: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        """Query the root/parent level of the vector store for similar chunks."""
+        if not query_embedding:
+            logger.warning("No query embedding provided")
+            return []
+
+        try:
+            query_results = self.index.query(
+                vector = query_embedding,
+                top_k = top_k,
+                namespace = self.root_namespace,
+                include_metadata = True,
+                filter = filter
+            )
+
+            # Format results
+            results = []
+            for match in query_results.matches:
+                result = {
+                    "id": match.id,
+                    "score": match.score,
+                    "text": match.metadata.get("text", ""),
+                    "summary": match.metadata.get("summary", ""),
+                    "metadata": {
+                        k: v for k, v in match.metadata.items() if k not in ["text", "summary"]
+                    }
+                }
+                results.append(result)
+
+            logger.info(f"Root query returned {len(results)} results")
+            return results
+
+        except Exception as e:
+            logger.error(f"Error querying root: {str(e)}")
+            return []
+
