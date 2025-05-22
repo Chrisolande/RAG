@@ -43,6 +43,7 @@ class LLMInterface:
         prompt: str,
         system_prompt: Optional[str] = None,
         temperature: float = 0.7,
+        use_stream: bool = True
     ) -> Dict[str, Any]:
         """
         Generate a response from the LLM.
