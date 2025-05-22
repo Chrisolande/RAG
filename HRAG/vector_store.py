@@ -70,4 +70,76 @@ class HierarchicalVectorStore:
             logger.error(f"Error ensuring index exists: {str(e)}")
             raise
 
-    
+    def upsert_root_chunks(self, root_chunks_with_embeddings):
+        """Upsert root/parent document chunks with embeddings to Pinecone."""
+
+        if not root_chunks_with_embeddings:
+            logger.warning("No root chunks to upsert.")
+            return
+
+        logger.info(f"Upserting {len(root_chunks_with_embeddings)} root chunks to Pinecone")
+        
+        # Prepare vectors for upserting
+        vectors = []
+        batch_size = 100
+
+        for chunk in root_chunks_with_embeddings:
+            # Use the chunk ID as the vector ID
+            vector_id = chunk.get("id", f"root_{int(time.time())}")
+            
+            # Extract the embedding - prefer summary embedding if available
+            if "summary_embedding" in chunk:
+                embedding = chunk.get("summary_embedding", [])
+            else:
+                embedding = chunk.get("text_embedding", chunk.get("embedding", []))
+            
+            # Extract metadata (excluding the embeddings)
+            # Start with base metadata
+            metadata = {"text": chunk["text"]}
+            
+            # Add metadata fields, filtering out null values
+            if "metadata" in chunk and isinstance(chunk["metadata"], dict):
+                for key, value in chunk["metadata"].items():
+                    # Skip null values as Pinecone doesn't accept them
+                    if value is not None:
+                        metadata[key] = value
+            
+            # Add summary to metadata if available and not None
+            if "summary" in chunk and chunk["summary"] is not None:
+                metadata["summary"] = chunk["summary"]
+            
+            # Add to vectors list
+            vectors.append((vector_id, embedding, metadata))
+        
+        # Upsert vectors in batches
+        successful_upserts = 0
+        
+        for i in range(0, len(vectors), batch_size):
+            batch = vectors[i:i + batch_size]
+            
+            try:
+                # Format batch for Pinecone
+                pinecone_batch = [
+                    (id, embedding, metadata) 
+                    for id, embedding, metadata in batch
+                ]
+                
+                # Upsert to Pinecone
+                self.index.upsert(
+                    vectors=pinecone_batch,
+                    namespace=self.root_namespace
+                )
+                
+                successful_upserts += len(batch)
+                logger.info(f"Upserted root batch {i // batch_size + 1}/{(len(vectors) - 1) // batch_size + 1}")
+            
+            except Exception as e:
+                logger.error(f"Error upserting root batch {i // batch_size + 1}: {str(e)}")
+        
+        logger.info(f"Successfully upserted {successful_upserts}/{len(vectors)} root vectors")
+        return successful_upserts
+
+
+
+    def upsert_leaf_chunks():
+        pass
