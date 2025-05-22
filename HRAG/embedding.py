@@ -119,3 +119,15 @@ class EmbeddingGenerator:
     def get_langchain_embeddings(self):
         """Get the langchain compatible embeddings"""
         return self.langchain_embeddings
+
+if __name__ == "__main__":
+    generator = EmbeddingGenerator()
+    # Test generating a single embedding
+    test_text = "This is a test document for embedding generation."
+    embedding = generator.generate_embedding(test_text)
+    print(f"Generated embedding with {len(embedding)} dimensions")
+    
+    # Test generating a query embedding
+    test_query = "What is machine learning?"
+    query_embedding = generator.generate_query_embedding(test_query)
+    print(f"Generated query embedding with {len(query_embedding)} dimensions")
