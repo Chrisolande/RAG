@@ -235,3 +235,52 @@ class HierarchicalVectorStore:
             logger.error(f"Error querying root: {str(e)}")
             return []
 
+    def query_leaf(
+        self, 
+        query_embedding: List[float], 
+        parent_ids: List[str] = None,
+        top_k: int = 5, 
+        filter: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
+
+        """Query the leaf level of the vector store for similar chunks."""
+        if not query_embedding:
+            logger.warning("No query embedding provided")
+            return []
+
+        try: 
+            # Add parent_ids to filter if provided
+            if parent_ids:
+                if filter is None:
+                    filter = {}
+                filter["parent_id"] = {"$in": parent_ids}
+
+            # Query Pinecone
+            query_results = self.index.query(
+                vector=query_embedding,
+                top_k=top_k,
+                namespace=self.leaf_namespace,
+                include_metadata=True,
+                filter=filter
+            )
+
+            # Format the results, log info then exit
+            results = []
+            for match in query_results.matches:
+                result = {
+                    "id": match.id,
+                    "score": match.score,
+                    "text": match.metadata.get("text", ""),
+                    "metadata": {
+                        k: v for k, v in match.metadata.items() if k != "text"
+                    }
+                }
+                results.append(result)
+            
+            logger.info(f"Leaf query returned {len(results)} results")
+            return results
+
+        except Exception as e:
+            logger.error(f"Error querying leaf: {str(e)}")
+            return []
+
