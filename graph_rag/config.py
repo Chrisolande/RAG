@@ -16,3 +16,5 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 # Default parameters
 DEFAULT_CHUNK_SIZE = 512
 DEFAULT_CHUNK_OVERLAP = 24
+
+KNOWLEDGE_BASE_PATH = "graph_rag/knowledge_base"
