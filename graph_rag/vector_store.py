@@ -1,9 +1,8 @@
 from langchain_community.vectorstores.neo4j_vector import Neo4jVector
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.documents import Document
-from typing import List, Optional, Dict, Any
-import os
-from config import OPENROUTER_API_KEY, GEMINI_API_KEY, EMBDEDDING_MODEL
+from typing import List, Optional
+from config import GEMINI_API_KEY, EMBEDDING_MODEL
 from knowledge_graph import KnowledgeGraph
 
 class VectorStore:
