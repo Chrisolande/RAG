@@ -20,3 +20,4 @@ DEFAULT_CHUNK_OVERLAP = 24
 KNOWLEDGE_BASE_PATH = "graph_rag/knowledge_base"
 
 MODEL_NAME = "mistralai/mistral-7b-instruct"
+EMBEDDING_MODEL = "models/text-embedding-004"
