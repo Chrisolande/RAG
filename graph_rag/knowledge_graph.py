@@ -117,3 +117,22 @@ class KnowledgeGraph:
                         """
 
                         self.graph.query(query, {"entity1": entity1, "entity2": entity2})
+
+    def visualize_graph(self, cypher_query: str = "MATCH (s)-[r:!MENTIONS]->(t) RETURN s,r,t LIMIT 50"):
+        """Visualize the graph using cypher query"""
+        try:
+            from yfiles_jupyter_graphs import GraphWidget
+            session = self.graph._driver.session()
+
+            # Create widget
+            widget = GraphWidget(graph = session.run(cypher_query).graph())
+            widget.node_label_mapping = 'id'
+
+            return widget
+        except ImportError:
+            print("yfiles_jupyter_graphs not available. Install it to visualize graphs")
+            return None
+
+    def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        """Execute a Cypher query on the graph."""
+        return self.graph.query(query, params)
