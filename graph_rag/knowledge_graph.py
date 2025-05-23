@@ -26,7 +26,7 @@ class KnowledgeGraph:
 
     def clear_database(self):
         """Clear all the data in the Neo4j database. """
-        self.graph.query("MATCH (n) DETACH DELETE n")"
+        self.graph.query("MATCH (n) DETACH DELETE n")
 
     def create_graph_from_documents(
         self,
