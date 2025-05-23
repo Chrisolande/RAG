@@ -18,6 +18,8 @@ class DocumentProcessor:
     
     def load_documents(self, knowledge_base_path: str = KNOWLEDGE_BASE_PATH):
         # Add Error handling in case the knowledge base doesn't exist
+        if not os.path.exists(knowledge_base_path):
+            raise FileNotFoundError(f"Knowledge base path does not exist: {knowledge_base_path}")
         
         loader = DirectoryLoader(
             knowledge_base_path,
@@ -27,3 +29,12 @@ class DocumentProcessor:
 
         documents = loader.load()
         return documents
+
+    def split_documents(self, documents: List[Document]) -> List[Document]:
+        """Split documents into chunks"""
+        return self.text_splitter.split_documents(documents)
+
+    def process_documents(self) -> List[Document]:
+        """Process documents"""
+        documents = self.load_documents()
+        return self.split_documents(documents)
