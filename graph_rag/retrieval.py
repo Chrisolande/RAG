@@ -51,3 +51,28 @@ class Retriever:
             result += "\n".join([el['output'] for el in response])
         
         return result
+
+    def vector_retrieval(self, question: str, k: int = 4) -> List[Document]:
+        """Retrieve information using vector similarity search."""
+        return self.vector_store.similarity_search(question)
+
+    def hybrid_retrieval(self, question: str, k_graph: int = 1, k_vector: int = 3) -> str:
+        """
+        Perform hybrid retrieval combining graph and vector search.
+        
+        """
+        # Get structured data from knowledge graph
+        structured_data = self.structured_retrieval(question)
+        
+        # Get unstructured data from vector store
+        unstructured_docs = self.vector_retrieval(question, k=k_vector)
+        unstructured_data = [doc.page_content for doc in unstructured_docs]
+        
+        # Combine results
+        final_data = f"""Structured data:
+            {structured_data}
+
+            Unstructured data:
+            {"#Document ".join(unstructured_data)}
+            """
+        return final_data
