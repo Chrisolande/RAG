@@ -29,6 +29,25 @@ class KnowledgeGraph:
     def clear_database(self):
         self.graph.query("MATCH (n) DETACH DELETE n")
 
+        
+    def _clean_relationship_name(self, relation: str) -> str:
+        """Clean relationship name to be valid for Neo4j Cypher"""
+        import re
+        # Convert to uppercase
+        clean = relation.upper()
+        # Replace spaces and common separators with underscores
+        clean = re.sub(r'[\s\-\.]+', '_', clean)
+        # Remove all non-alphanumeric characters except underscores
+        clean = re.sub(r'[^A-Z0-9_]', '', clean)
+        # Remove multiple consecutive underscores
+        clean = re.sub(r'_+', '_', clean)
+        # Remove leading/trailing underscores
+        clean = clean.strip('_')
+        # Ensure it's not empty and doesn't start with a number
+        if not clean or clean[0].isdigit():
+            clean = 'RELATED_TO'
+        return clean
+
     def create_graph_from_documents(self, documents: List[Document]):
         extraction_prompt = ChatPromptTemplate.from_template(
             """You are an expert information extraction system. Extract entities and relationships from the provided text with high precision and completeness.
@@ -56,6 +75,7 @@ class KnowledgeGraph:
             3. Use the most specific relationship type available
             4. Include temporal context when mentioned (e.g., "former_CEO_of" vs "CEO_of")
             5. Prioritize relationships that add substantive information about the entities
+            6. **IMPORTANT**: Relationship names must only contain letters, numbers, and underscores. NO parentheses, spaces, or special characters.
 
             ## Text to Analyze:
             {text}
@@ -135,7 +155,7 @@ class KnowledgeGraph:
                         entity1, relation, entity2 = parts
                         relationships.append((entity1, relation, entity2))
             
-            # Create entities in Neo4j
+            # Create entities 
             for entity_name, entity_type in entities:
                 # Create entity with both generic and specific labels
                 create_entity_query = f"""
@@ -159,7 +179,7 @@ class KnowledgeGraph:
             # Create relationships in Neo4j
             for entity1, relation, entity2 in relationships:
                 # Clean relationship name for Cypher
-                clean_relation = relation.upper().replace(' ', '_').replace('-', '_')
+                clean_relation = self._clean_relationship_name(relation)
                 
                 # Ensure both entities exist
                 self.graph.query("MERGE (e:__Entity__ {id: $entity})", {"entity": entity1})
