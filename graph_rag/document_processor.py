@@ -2,10 +2,10 @@ from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain.text_splitter import TokenTextSplitter
 from typing import List
 from langchain_core.documents import Document
-from config import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE, KNOWLEDGE_BASE_PATH
-
+from config import CHUNK_OVERLAP, CHUNK_SIZE, KNOWLEDGE_BASE_PATH
+import os
 class DocumentProcessor:
-    def __init__(self, chunk_size: int = 512, chunk_overlap: int= 24):
+    def __init__(self, chunk_size: int = CHUNK_SIZE, chunk_overlap: int= CHUNK_OVERLAP):
         """Initialize the document processor"""
 
         self.chunk_size = chunk_size
