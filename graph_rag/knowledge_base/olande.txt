@@ -2,7 +2,7 @@
 
 **Overview**
 
-Chris Olande is an ambitious and intellectually gifted data science student at Kenyatta University in Nairobi, Kenya. With a rigorous academic foundation in statistics and programming, Chris is cultivating a multidisciplinary approach that intersects applied mathematics, artificial intelligence, and human-centered design. He brings together analytical precision, computational depth, and social responsibility in his work. Chris is not only building machine learning systems—he is actively shaping the future of AI literacy and ethical, context-aware data applications in Kenya and beyond.
+Chris Olande is an statistics and programming student at Kenyatta University in Nairobi, Kenya. With a rigorous academic foundation in statistics and programming, Chris is cultivating a multidisciplinary approach that intersects applied mathematics, artificial intelligence, and human-centered design. He brings together analytical precision, computational depth, and social responsibility in his work. Chris is not only building machine learning systems—he is actively shaping the future of AI literacy and ethical, context-aware data applications in Kenya and beyond.
 
 **Academic Background and Technical Expertise**
 
