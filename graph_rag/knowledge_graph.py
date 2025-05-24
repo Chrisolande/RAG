@@ -30,9 +30,112 @@ class KnowledgeGraph:
         )
 
         self.graph = Neo4jGraph()
+        self._graph_loaded = False
+
+    def check_graph_exists(self) -> bool:
+        """Check if the graph database contains any data."""
+        try:
+            result = self.graph.query("MATCH (n) RETURN count(n) as count LIMIT 1")
+            node_count = result[0]['count'] if result else 0
+            return node_count > 0
+        except Exception as e:
+            print(f"Error checking graph existence: {e}")
+            return False
+
+    def load_existing_graph(self, force_reload: bool = False) -> bool:
+        """
+        Load existing graph data and set internal state.
+
+        """
+        if self._graph_loaded and not force_reload:
+            print("Graph already loaded. Use force_reload=True to reload.")
+            return True
+            
+        if not self.check_graph_exists():
+            print("No existing graph found in the database.")
+            return False
+        
+        try:
+            # Get graph statistics to confirm loading
+            stats = self.get_graph_stats()
+            print(f"Loading existing graph...")
+            print(f"Found {stats['nodes']} nodes and {stats['relationships']} relationships")
+            
+            if stats.get('entity_types'):
+                print(f"Entity types: {list(stats['entity_types'].keys())}")
+            if stats.get('relationship_types'):
+                print(f"Relationship types: {list(stats['relationship_types'].keys())}")
+            
+            self._graph_loaded = True
+            print("Graph loaded successfully!")
+            return True
+            
+        except Exception as e:
+            print(f"Error loading existing graph: {e}")
+            return False
+
+    def load_or_create_graph(self, documents: Optional[List[Document]] = None, 
+                           method: str = "custom") -> bool:
+        """
+        Load existing graph if it exists, otherwise create new one from documents.
+
+        """
+        # load existing graph
+        if self.load_existing_graph():
+            return True
+        
+        # If no existing graph and documents provided, create new graph
+        if documents:
+            print("No existing graph found. Creating new graph from documents...")
+            if method == "custom":
+                self.create_graph_from_documents(documents)
+            else:
+                self.create_graph(documents)
+            self._graph_loaded = True
+            return True
+        
+        # No existing graph and no documents provided
+        print("No existing graph found and no documents provided for creation.")
+        return False
+
+    def get_graph_summary(self) -> Dict[str, Any]:
+        """Get a detailed summary of the current graph."""
+        if not self.check_graph_exists():
+            return {"status": "empty", "message": "No graph data found"}
+        
+        stats = self.get_graph_stats()
+        
+        # Get sample nodes
+        sample_nodes = self.graph.query("""
+            MATCH (n:__Entity__) 
+            RETURN n.id as name, n.type as type 
+            LIMIT 10
+        """)
+        
+        # Get sample relationships
+        sample_rels = self.graph.query("""
+            MATCH (a)-[r]->(b) 
+            RETURN a.id as source, type(r) as relationship, b.id as target 
+            LIMIT 10
+        """)
+        
+        return {
+            "status": "loaded",
+            "statistics": stats,
+            "sample_nodes": sample_nodes,
+            "sample_relationships": sample_rels,
+            "is_loaded": self._graph_loaded
+        }
+
+    def reset_graph_state(self):
+        """Reset the internal graph state """
+        self._graph_loaded = False
 
     def clear_database(self):
+        """Clear the database and reset internal state."""
         self.graph.query("MATCH (n) DETACH DELETE n")
+        self.reset_graph_state()
+        print("Database cleared successfully.")
 
     def _clean_relationship_name(self, relation: str) -> str:
         """Clean relationship name to be valid for Neo4j Cypher"""
@@ -274,6 +377,7 @@ class KnowledgeGraph:
         print("Graph creation completed!")
 
     def create_graph(self, documents: List[Document]):
+        """Let the library do the creation"""
         llm_transformer = LLMGraphTransformer(llm = self.llm)
 
         # Convert the documents to graph format in batches
@@ -306,6 +410,7 @@ class KnowledgeGraph:
 
     def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Execute a Cypher query on the graph."""
+
         return self.graph.query(query, params)
 
     def get_graph_stats(self) -> Dict[str, int]:
