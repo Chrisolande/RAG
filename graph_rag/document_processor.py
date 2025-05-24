@@ -4,6 +4,7 @@ from typing import List
 from langchain_core.documents import Document
 from config import CHUNK_OVERLAP, CHUNK_SIZE, KNOWLEDGE_BASE_PATH
 import os
+
 class DocumentProcessor:
     def __init__(self, chunk_size: int = CHUNK_SIZE, chunk_overlap: int= CHUNK_OVERLAP):
         """Initialize the document processor"""
