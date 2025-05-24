@@ -26,7 +26,7 @@ class VectorStore:
         self,
         documents: List[Document],
         node_label: str = "Document",
-        text_node_property: str = "text",
+        text_node_property: list = ["text"],
         embedding_node_property: str = "embedding"
     ):
         """Create vector index from documents"""
@@ -50,12 +50,12 @@ class VectorStore:
         embedding_node_property:str = "embedding"
     ):
         """Create hybrid index"""
-        self.vector_index = Neo4j.from_existing_graph(
+        self.vector_index = Neo4jVector.from_existing_graph(
             self.embeddings,
-            url = self.knowledge_graph.uri,
+            url = self.knowledge_graph.url,
             username = self.knowledge_graph.username,
             password = self.knowledge_graph.password,
-            search_type = "hybrid",
+            search_type = "hybrid", # Combines both semantic and keyword matching
             node_label = node_label,
             text_node_properties = text_node_properties,
             embedding_node_property = embedding_node_property
