@@ -18,7 +18,7 @@ class GraphEntityRetriever:
         self,
         model_name: Optional[str] = None,
         entity_index_name: str = "entity",
-        max_entities_per_query: int = 3,
+        max_entities_per_query: int = 10,
         max_results_per_entity: int = 50,
         similarity_threshold: int = 2
     ):
