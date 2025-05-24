@@ -24,7 +24,8 @@ class RagChain:
         self.llm = ChatOpenAI(model = self.model_name,
                                 api_key = self.api_key,
                                 openai_api_base = "https://openrouter.ai/api/v1",
-                                temperature = 0)
+                                temperature = 0,
+                                streaming = True)
 
         self._condense_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question,
                 in its original language.
