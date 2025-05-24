@@ -1,6 +1,5 @@
 from knowledge_graph import KnowledgeGraph
 from vector_store import VectorStore
-from entity_extraction import EntityExtractor
 from typing import List
 from langchain_core.documents import Document
 
@@ -9,47 +8,42 @@ class Retriever:
     def __init__(
         self, 
         knowledge_graph: KnowledgeGraph,
-        vector_store: VectorStore,
-        entity_extractor: EntityExtractor
+        vector_store: VectorStore
     ):
 
         """Initialize the retriever"""
         self.knowledge_graph = knowledge_graph
         self.vector_store = vector_store
-        self.entity_extractor = entity_extractor
 
     def structured_retrieval(self, question: str) -> str:
-        """ Retrieve information from the knowledge graph based on entities in the question"""
+        """ Retrieve information from the knowledge graph using direct graph queries"""
         
-        # Extract entities from the question
-        entities = self.entity_Extractor.extract_entities(question)
-
-        # Initialize result
+        # Instead of entity extraction, directly query the graph
+        # using the question text for relevant patterns
         result = ""
-        for entity in entities:
-            # Generate full-text query
-            query = self.entity_extractor.generate_full_text_query(entity)
-            # Execute Cypher query to find entity and its neighborhood
+        
+        # directly query the graph for relevant relationships
+        try:
+            # Execute a simpler Cypher query that doesn't rely on fulltext search
             response = self.knowledge_graph.query(
                 """
-                CALL db.index.fulltext.queryNodes('entity', $query, {limit:2})
-                YIELD node, score
-                CALL {
-                  WITH node
-                  MATCH (node)-[r]->(neighbor)
-                  RETURN node.id + " - " + type(r) + " -> " + neighbor.id AS output
-                  UNION
-                  MATCH (neighbor)-[r]->(node)
-                  RETURN neighbor.id + " - " + type(r) + " -> " + node.id AS output
-                }
-                RETURN output
+                MATCH (n:__Entity__)-[r]-(m:__Entity__)
+                WHERE n.id CONTAINS $keyword OR m.id CONTAINS $keyword
+                RETURN n.id + " - " + type(r) + " -> " + m.id AS output
+                LIMIT 20
                 """,
-                {"query": query}
+                {"keyword": question.lower()}
             )
-
-            # Append results
-            result += "\n".join([el['output'] for el in response])
-        
+            
+            # If we got results, return them
+            if response:
+                result = "\n".join([el['output'] for el in response])
+            else:
+                result = "No relevant information found in the knowledge graph."
+                
+        except Exception as e:
+            result = f"Error querying knowledge graph: {str(e)}"
+            
         return result
 
     def vector_retrieval(self, question: str, k: int = 4) -> List[Document]:
