@@ -14,10 +14,10 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Default parameters
-DEFAULT_CHUNK_SIZE = 512
-DEFAULT_CHUNK_OVERLAP = 24
+CHUNK_SIZE = 1024
+CHUNK_OVERLAP = 128
 
-KNOWLEDGE_BASE_PATH = "graph_rag/knowledge_base"
+KNOWLEDGE_BASE_PATH = "/home/olande/Desktop/Rag_Techniques/graph_rag/knowledge_base"
 
 MODEL_NAME = "mistralai/mistral-7b-instruct"
-EMBEDDING_MODEL = "models/text-embedding-004"
+EMBEDDING_MODEL = "text-embedding-004"
